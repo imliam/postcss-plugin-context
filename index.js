@@ -12,11 +12,23 @@ module.exports = postcss.plugin(plugin, function (plugins) {
         })[0]];
     };
 
-    return function (css, result) {
+    var countAtRules = function (css, ruleType) {
+        let atRuleCount = 0
+
+        css.walkAtRules(ruleType, rule => {
+            atRuleCount += 1
+        });
+
+        return atRuleCount
+    }
+
+    var parse = function (css, result) {
         if (Object.prototype.toString.call(plugins) !== '[object Object]') {
             throw new Error(plugin + ' cannot be called on a non-object');
         }
         css.walkAtRules('context', function (rule) {
+            // throw new Error(comma(rule.params).length)
+
             comma(rule.params).forEach(function (ctx) {
                 var method = getPlugin(ctx);
                 if (method.postcss) {
@@ -39,5 +51,13 @@ module.exports = postcss.plugin(plugin, function (plugins) {
             });
             rule.remove();
         });
+
+        if (countAtRules(css, 'context') > 0) {
+            parse(css, result)
+        }
     };
+
+    return function(css, result) {
+        return parse(css, result)
+    }
 });
